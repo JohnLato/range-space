@@ -248,7 +248,7 @@ inRange :: (Ord a, AffineSpace a, HasBasis (Diff a), Eq (Basis (Diff a))
 inRange val rng = all f $ zip (decompose pVec) (decompose rVec)
   where
     f ((b1,ppart), (b2,rpart))
-        | b1 == b2 = ppart >= 0 && rpart - ppart > 0
+        | b1 == b2 = ppart >= 0 && rpart - ppart >= 0
         | otherwise = error "Data.RangeSpace.inRange: basis decompositions must be deterministically ordered"
     pVec = val .-. start
     rVec = stop .-. start

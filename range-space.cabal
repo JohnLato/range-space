@@ -29,11 +29,14 @@ Test-Suite test
   default-language: Haskell2010
   type: exitcode-stdio-1.0
   main-is: Properties.hs
-  hs-source-dirs: tests
+  hs-source-dirs: tests .
+  ghc-options:    -fhpc -hpcdir dist/hpc/mix/range-space-0.1.0.0
 
   build-depends:
       base,
       range-space,
+      vector-space,
+      vector-space-points,
       time                       == 1.4.*,
       QuickCheck                 >= 2   && < 3,
       test-framework             >= 0.3 && < 0.7,

@@ -10,6 +10,7 @@ module Main (main) where
 import Data.RangeSpace
 
 import Control.Applicative
+import Control.Arrow ((&&&))
 import Data.List (sort)
 
 import Data.Time.Calendar (Day(..))
@@ -134,9 +135,31 @@ orderedRangeBounds bounds = (max1 .-. min1) >= zeroV
 roundTripRange :: (Ord a, ApproxEq a, AffineSpace a) => a -> a -> Bool
 roundTripRange s0 s1 =
   if s1 >= s0
-    then (s0,s1) === (toBounds $ fromBounds (s0,s1) )
-    else (s1,s0) === (toBounds $ fromBounds (s0,s1) )
+    then (s0,s1) === (toBounds $ fromBoundsC s0 s1 )
+    else (s1,s0) === (toBounds $ fromBoundsC s0 s1 )
 
+roundTripSpan :: (Ord a, ApproxEq a, ApproxEq (Diff a), AffineSpace a) => a -> Diff a -> Bool
+roundTripSpan s0 diff = (s0,diff) === (toSpan $ fromSpanC s0 diff)
+
+propEnds :: (Ord a, ApproxEq a) => a -> a -> Bool
+propEnds s0 s1 =
+  if s1 >= s0
+    then let rng = fromBoundsC s0 s1
+         in (s0,s1) === (rangeStart rng, rangeEnd rng)
+    else let rng = fromBoundsC s0 s1
+         in (s1,s0) === (rangeStart rng, rangeEnd rng)
+
+----------------------------------------------------------------------
+-- newRange tests
+
+newRange2D :: DoubleP -> DoubleP -> Bool
+newRange2D p1 p2 = newRange p1 p2 === testRange
+  where
+    (p1x,p1y) = (xAxis &&& yAxis) $ unPoint p1
+    (p2x,p2y) = (xAxis &&& yAxis) $ unPoint p2
+    toP x y = P (D2V x y)
+    testRange = Range (toP (min p1x p2x) (min p1y p2y))
+                      (toP (max p1x p2x) (max p1y p2y))
 
 ----------------------------------------------------------------------
 -- maskRange tests
@@ -229,6 +252,28 @@ unionRangeBounds r1 r2 =
         (min2,max2) = toBounds r2
 
 ----------------------------------------------------------------------
+-- querying tests
+
+inRange2D :: DoubleP -> DoubleP -> DoubleP -> Bool
+inRange2D p0 p1 px = inRange px (newRange p0 p1) == checkRange
+  where
+    checkRange = (pMinX <= pxX && pxX <= pMaxX)
+                 && (pMinY <= pxY && pxY <= pMaxY)
+    (p0X,p0Y) = (xAxis &&& yAxis) $ unPoint p0
+    (p1X,p1Y) = (xAxis &&& yAxis) $ unPoint p1
+    (pxX,pxY) = (xAxis &&& yAxis) $ unPoint px
+    pMinX = min p0X p1X
+    pMaxX = max p0X p1X
+    pMinY = min p0Y p1Y
+    pMaxY = max p0Y p1Y
+
+inRangeProp :: (Ord a, ApproxEq a) => a -> Range a -> Bool
+inRangeProp x rng = inOrdRange x rng == checkRange
+  where
+    checkRange = x >= minV && x <= maxV
+    (minV,maxV) = toBounds rng
+
+----------------------------------------------------------------------
 -- Test harness
 
 main :: IO ()
@@ -243,6 +288,10 @@ tests =
         , testProperty "DoubleP" (orderedBoundsRange   :: Range DoubleP   -> Bool)
         ]
       ]
+    , testGroup "endpoints"
+      [ testProperty "Double" (propEnds :: Double -> Double -> Bool)
+      , testProperty "DoubleP" (propEnds :: DoubleP -> DoubleP -> Bool)
+      ]
     , testGroup "range"
       [ testGroup "construction"
         [ testProperty "Double" (orderedRangeBounds  :: (Double,Double)->Bool)
@@ -253,14 +302,19 @@ tests =
       [ testProperty "Double" (roundTripRange :: Double->Double->Bool)
       , testProperty "DoubleP" (roundTripRange :: DoubleP->DoubleP->Bool)
       ]
+    , testGroup "span"
+      [ testProperty "Double"  (roundTripSpan :: Double -> Double -> Bool)
+      , testProperty "DoubleP" (roundTripSpan :: DoubleP -> D2V Double Double -> Bool)
+      ]
+    , testProperty "newRange" newRange2D
     , testGroup "union"
     -- only testing with a few types, if there are problems with instances
     -- they'll show up in maskRange tests
-    [ testProperty "Double"
-        (unionRangeBounds :: Range Double->Range Double->Bool)
-    , testProperty "NominalDiffTime"
-        (unionRangeBounds :: Range NominalDiffTime->Range NominalDiffTime->Bool)
-    ]
+      [ testProperty "Double"
+          (unionRangeBounds :: Range Double->Range Double->Bool)
+      , testProperty "NominalDiffTime"
+          (unionRangeBounds :: Range NominalDiffTime->Range NominalDiffTime->Bool)
+      ]
     , testGroup "maskRange"
       [ testGroup "maskOuter1D"
         [ testProperty "Double"
@@ -308,5 +362,9 @@ tests =
             Range Double->Range Double->Range NominalDiffTime
             ->Range NominalDiffTime->Bool)
         ]
+      ]
+    , testGroup "queries"
+      [ testProperty "inRange" inRange2D
+      , testProperty "inOrdRange" (inRangeProp :: Double -> Range Double -> Bool)
       ]
     ]

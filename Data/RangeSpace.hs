@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -37,8 +38,10 @@ module Data.RangeSpace (
 , range2D
 , fromRange2D
 
+#if !MIN_VERSION_vector_space_points(0,1,2)
 -- ** AffineSpace conversions
 , unPoint
+#endif
 
 -- * Functions
 -- ** Combining ranges
@@ -71,9 +74,15 @@ import Control.Applicative
 import Control.Arrow             ((***))
 import Data.List                 (zipWith4)
 
--- | This should be provided by the AffineSpace.Point module, but isn't.
+#if MIN_VERSION_vector_space_points(0,1,2)
+-- nothing to be done, unPoint should be included
+#else
+-- | This is provided by AffineSpace.Point in vector-space-points >= 0.1.2, but
+-- you appear to be using an older version.
 unPoint :: Point v -> v
 unPoint (P v) = v
+
+#endif
 
 -- | Define a Range over some domain
 data Range t = Range !t !t

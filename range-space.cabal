@@ -40,8 +40,8 @@ Test-Suite test
       vector-space-points,
       time                       == 1.4.*,
       QuickCheck                 >= 2   && < 3,
-      test-framework             >= 0.3 && < 0.7,
-      test-framework-quickcheck2 >= 0.2 && < 0.3
+      test-framework             >= 0.3 && < 0.9,
+      test-framework-quickcheck2 >= 0.2 && < 0.4
 
 source-repository head
   type:                git

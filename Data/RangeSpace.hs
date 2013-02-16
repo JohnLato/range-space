@@ -3,6 +3,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 ----------------------------------------------------------------------
 {- |
@@ -73,6 +74,7 @@ import Data.AffineSpace.Point as V
 
 import Control.Applicative
 import Control.Arrow             ((***))
+import Data.Semigroup
 import Data.List                 (zipWith4)
 
 #if MIN_VERSION_vector_space_points(0,1,2)
@@ -92,6 +94,9 @@ data Range t = Range !t !t
 instance Applicative Range where
     pure a = Range a a
     (Range minf maxf) <*> (Range minv maxv) = Range (minf minv) (maxf maxv)
+
+instance (BasisRange t) => Semigroup (Range t) where
+    (<>) = unionRange
 
 -- | A '(minimum,maximum)' pair
 type Bounds t = (t,t)

@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
@@ -152,21 +153,17 @@ translateRange t rng = (.+^ t) <$> rng
 -- -------------------------------------------------------------------------
 -- multi-dimensional stuff
 
+-- | The necessary 'Constraint' for working with multi-dimensional ranges.
+type BasisRange t = (Ord t, AffineSpace t, HasBasis (Diff t)
+                    ,Ord (Scalar (Diff t)), Num (Scalar (Diff t)))
+
 -- | Create a range from a 'start,stop' pair.  For multi-dimensional ranges,
 -- the resulting range will be the union of the two points.
-newRange :: (Ord t, AffineSpace t, HasBasis (Diff t)
-            ,Ord (Scalar (Diff t)), Num (Scalar (Diff t)))
-         => t
-         -> t
-         -> Range t
+newRange :: BasisRange t => t -> t -> Range t
 newRange start stop = unionRange (Range start start) (Range stop stop)
 
 -- | Calculate the union of two 'Bounds'.  See the notes for @unionRange@.
-unionBounds :: (Num (Scalar (Diff t)), Ord (Scalar (Diff t)), Ord t,
-               HasBasis (Diff t), AffineSpace t)
-            => Bounds t
-            -> Bounds t
-            -> Bounds t
+unionBounds :: BasisRange t => Bounds t -> Bounds t -> Bounds t
 unionBounds r1 r2 = unRange $ unionRange (fromBounds r1) (fromBounds r2)
 
 -- | Calculate the union of two 'Range's, per-basis.
@@ -180,14 +177,12 @@ unionBounds r1 r2 = unRange $ unionRange (fromBounds r1) (fromBounds r2)
 -- doesn't require a full 'VectorSpace'. It does require that the
 -- affine space scalars are in a vector space, but this is more easily
 -- satisfiable.
-unionRange :: (Num (Scalar (Diff t)), Ord t, Ord (Scalar (Diff t)),
-                HasBasis (Diff t), AffineSpace t)
-           => Range t -> Range t -> Range t
+unionRange :: BasisRange t => Range t -> Range t -> Range t
 unionRange r0 r1 =
         Range (adjust combineMin min0 min1) (adjust combineMax max0 max1)
     where
-        combineMin diff = min diff 0
-        combineMax diff = max diff 0
+        combineMin dif = min dif 0
+        combineMax dif = max dif 0
         adjust f orig s = (orig .+^) . recompose . map (fmap f)
                              . decompose $ s .-. orig
         (min0,max0) = toBounds r0
@@ -199,8 +194,7 @@ unionRange r0 r1 =
 --  independently for each basis.
 --  If the range lies entirely outside the mask, the returned value
 --  is 'Range rmin rmin' (per-basis)
-maskRange :: (Eq (Basis (Diff t)), Num (Scalar (Diff t)), Ord t,
-                   Ord (Scalar (Diff t)), HasBasis (Diff t), AffineSpace t)
+maskRange :: (Eq (Basis (Diff t)), BasisRange t)
               => Range t    -- ^ restriction
               -> Range t    -- ^ original Range
               -> Range t
@@ -249,8 +243,7 @@ extentY = snd . fromRange2D . fmap unPoint
 -- -------------------------------------------------------------------------
 
 -- | True if a value lies inside a 'Range'.
-inRange :: (Ord a, AffineSpace a, HasBasis (Diff a), Eq (Basis (Diff a))
-           ,Num (Scalar (Diff a)) ,Ord (Scalar (Diff a)))
+inRange :: (BasisRange a, Eq (Basis (Diff a)))
         => a
         -> Range a
         -> Bool

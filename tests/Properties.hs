@@ -16,7 +16,7 @@ import Data.List (sort)
 import Data.Time.Calendar (Day(..))
 import Data.Time.Clock
 
-import Test.QuickCheck
+import Test.QuickCheck hiding ((===))
 
 import Test.Framework (Test, defaultMain, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)

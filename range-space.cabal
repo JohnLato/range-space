@@ -22,9 +22,9 @@ library
                        Data.RangeSpace.TwoD
   -- other-modules:       
   build-depends:       base >= 4.5 && < 5
-                      ,semigroups   >= 0.8 && < 0.13
+                      ,semigroups   >= 0.8 && < 0.15
                       ,vector-space == 0.8.*
-                      ,vector-space-points == 0.1.*
+                      ,vector-space-points >= 0.1 && < 0.3
   default-extensions: CPP
 
 Test-Suite test

@@ -40,7 +40,7 @@ Test-Suite test
       semigroups,
       vector-space,
       vector-space-points,
-      time                       == 1.4.*,
+      time                       >= 1.4 && < 1.6,
       QuickCheck                 >= 2   && < 3,
       test-framework             >= 0.3 && < 0.9,
       test-framework-quickcheck2 >= 0.2 && < 0.4
